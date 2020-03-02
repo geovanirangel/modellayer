@@ -1,0 +1,40 @@
+{
+    "config": {
+        "disable-tls": true,
+        "secure-http": false
+    },
+    "name": "geovanirangel/modellayer",
+    "description": "O ModelLayer é um componente baseado em PDO que abstraí operações de CRUD(Select, Insert, Update e Delete) no seu banco de dados.",
+    "keywords": [
+        "Database",
+        "CRUD",
+        "PDO",
+        "Model",
+        "MVC",
+        "Layer Supertype",
+        "Active Record"
+    ],
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "type": "library",
+    "support": {
+        "email": "dev.geovanirangel@gmail.com"
+    },
+    "authors": [
+        {
+            "name": "Geovani Rangel",
+            "email": "dev.geovanirangel@gmail.com",
+            "role": "Web Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "GeovaniRangel\\ModelLayer\\": "src",
+            "Models\\": "tests/models"
+        }
+    },
+    "require": {
+        "php": "^7.0",
+        "ext-pdo": "*"
+    }
+}
