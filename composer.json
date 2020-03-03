@@ -1,8 +1,4 @@
 {
-    "config": {
-        "disable-tls": true,
-        "secure-http": false
-    },
     "name": "geovanirangel/modellayer",
     "description": "O ModelLayer é um componente baseado em PDO que abstraí operações de CRUD(Select, Insert, Update e Delete) no seu banco de dados.",
     "keywords": [
