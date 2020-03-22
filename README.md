@@ -2,26 +2,33 @@
 
 O ModelLayer é um componente que abstrai operações de CRUD (Select, Insert, Update e Delete) no seu banco de dados. Baseado em PDO, projetado para um estruturas MVC (Model-View-Controller) com o padrão Active Record, testado com MySQL.
 
+## Novidades da versão 2.1.0!
+
+  - Adicionado suporte a relacionamentos de entidades. Agora entidades estrangeiras poderão ser instanciadas automaticamente após consultas.
+  - Um novo método vai te ajudar na construção de consultas. O ```fetchGet()``` permite obter os dados de suas consultas sem sobreescrever os dados já obtidos em consultas anteriores.
+
+---
+
 ## Instalação
 
 via Composer:
 
 ```json
-"geovanirangel/modellayer": "2.0.0"
+"geovanirangel/modellayer": "2.1.0"
 ```
 
 ---
 
 ## Usando o ModelLayer
 
-Antes de tudo configure a conexão. O ModelLayer procurará por uma constante __DBCONFIG__ com as seguintes configurações para usar em suas rotinas:
+Antes de tudo configure a conexão. O ModelLayer procurará por uma constante **DBCONFIG** com as seguintes configurações para usar em suas rotinas:
 ```php
 // Exemplo de conexão
 define("DBCONFIG", [
     "driver" => "mysql",
     "host" => "localhost",
     "port" => "3306",
-    "charset" => "utf8",
+    "charset" => "utf8mb4",
     "dbname" => "database_name",
     "users" => [
         "default" => [
@@ -56,10 +63,21 @@ define("DBCONFIG", [
 
 Os usuários "select", "insert", "update", "delete" são específicos para o seu tipo operação CRUD mas caso não forem encontrados ou configurados o ModelLayer usará o que está em **default**.
 
+Crie um modelo extendendo a classe **Entity** e informe:
+  - O **nome da entidade** do banco de dados;
+  - A **primary key**;
+  - O terceiro parâmetro consisti em uma matriz para mapear a **estrutura da entidade**. As chaves serão os nomes dos campos e os índices poderam ser:
+    - **null** (```boolean```): : indicando se o campo poder ficar vazio. O padrão é ```false```, ou seja, ```NOT_NULL```;
+    - **created** (```boolean```): : para campos do tipo ```DATETIME``` que guardará o ```TIMESTAMP``` que o registro foi criado. O padrão é ```false```;
+    - **updated** (```boolean```): para campos do tipo ```DATETIME``` que guardaram o ```TIMESTAMP``` da atualização do registro. O padrão é ```false```;
+    ---
+    Indicando relacionamentos entre entidades:
+    - **foreignEntity** (```string|null```): para campos que guardam relacionamento (foreign keys). Nesse índice informe a classe que representa a entidade, cuja, o campo faz referência. O padrão é ```null```;
+    - **fkRefer** (```string```): Nome do campo que ele fará referência na entidade estrangeira. Caso não informado ele fará referência a chave primária;
+    - **hasMany** (```boolean```): Indica se o campo faz referência a vários registros. O padrão é ```false```, ou seja, relacionamentos **1 para N**;
+    - **propertyName** (```string```): Nome da propiedade da classe que guardará os dados obtidos do relacionamento. Caso não informado usará o nome da classe informada em **foreignEntity**;
 
-Crie um modelo extendendo a classe _Entity_, ela vai te dar acesso a todos os recursos do ModelLayer.
-No método construtor informe o **nome da entidade** no banco de dados, o nome da **primary key** e as colunas como uma matriz. Nessa matriz pode conter o índice __"null"__ para informar se o campo poder ficar nullo(o padrão é ```false```), o índice __"updated"__ para colunas do tipo __TIMESTAMP__ que guardaram um valor __DATETIME__ na hora da atualização(o padrão é ```false```) e o índice __"created"__ para colunas do tipo __TIMESTAMP__ que guardaram o valor __DATETIME__ de sua criação(o padrão é ```false```).
-Exemplo de Modelo:
+Exemplos de Modelos:
 ```php
 class User extends Entity
 {
@@ -78,6 +96,22 @@ class User extends Entity
     }
 }
 ```
+```php
+class Adress extends Entity
+{
+    public function __construct()
+    {
+        parent::__construct(
+            "adresses",
+            "id",
+            array(
+                "adress" => ["null" => false],
+                "user_id" => ["null" => false, "foreignEntity" => "Models\User"]
+            )
+        );
+    }
+}
+```
 
 Depois que configurar a conexão e criar o modelo é só partir pra diversão :) !
 
@@ -89,10 +123,10 @@ var_dump($users->data());
 
 // Obter um _usuário_ atrávez de sua primery key:
 $user = (new User())->getByPK(1);
-var_dump($uses->data());
+var_dump($user->data());
 ```
 
-O método ```data()``` vai retorna os dados que geralmento obtemos em consultas.
+O método ```data()``` vai retornará somente os dados que obtemos nas consultas. Uma instância de ```stdClass```;
 
 __DELETE__:
 ```php
@@ -100,7 +134,7 @@ __DELETE__:
 $user = (new User())->getByPK(1)->delByPk();
 $user = (new User())->delByPk(1);
 
-// Deletando usuário a partir de uma coluna e um valor:
+// Deletando usuário a partir de uma coluna(ex: email) e um valor:
 $user = (new User())->del("email", "user@mail.com");
 ```
 
@@ -118,7 +152,7 @@ else {
     echo $user->error()->getMessage();
 }
 
-// Editando os dados do _usuário_ (UPDATE):
+// Editando os dados (UPDATE):
 $user = (new User())->getByPK(1);
 $user->name = "New Name";
 $user->email = "newuser@mail.com";
@@ -131,11 +165,14 @@ else {
 ```
 
 Construindo consultas com o __QueryBuilder__:
-O trait _QueryBuilder_ abstraí a construção de consultas sql tornando possível a escrita de uma, olha só...
+O trait _QueryBuilder_ abstraí a construção de consultas sql tornando possível nunca mais a escrita de uma, olha só alguns exemplos com o modelo ```User```:
 
 ```php
+// Modelo
+$user = (new Models\User());
+
 // Obter todos registros:
-$user = (new User())->find()->fetch();
+$user->find()->fetch();
 
 //  Cláusula WHERE:
 $user->find()->where("name = :name", ":name=username")->fetch();
@@ -149,22 +186,13 @@ $user->find()->innerJoin(new ForeignEntity())->on("foreign_key_name")->fetch();
 $user->find()->leftJoin(new ForeignEntity())->on("foreign_key_name")->fetch();
 $user->find()->rightJoin(new ForeignEntity())->on("foreign_key_name")->fetch();
 
-// Tem também o étodos group(), order(), limit() e offset():
+// Tem também o métodos group(), order(), limit() e offset():
 $user->find()->group("col_name")->order("col_name DESC")->limit(10)->offset(2));
 ```
 
-O método ```fetch``` aceita um parâmetro booleano(padrão ```true```) que indica se os dados serão obtidos com o método ```fetchAll``` ou ```fetch()``` do PDO.
+Lembre-se de usar o método ```data()``` para obter somente dados e não o objeto em questão.
 
-
-A classe __Entity__ tambèm possuí outros métodos úteis como:
-| Método | Descrição | Retorno |
-| --- | --- | --- |
-| data()      | Retorna os dados obtidos na última query    | ```null|stdClass|array```|
-| exist()     | Retorna ```true``` caso tenha retornado um registro único e  ```false``` caso contrário   | ```bool```|
-| found()     | Igual ao ```exist()``` porém retorna o própio objeto caso exista | ```bool(false)|self```|
-| count()     | Retorna número de linhas afetadas/retornadas da última query ou última instrução sql | ```int```|
-| sqlState()  | Retorna o código sqlstate da última ```PDOException```| ```null|int```|
-| error()  | Retorna um objeto da interface ```Throwable``` correspondente ao último erro ocorrido caso exista | ```null|Throwable```|
+Pode usar também o método ```fetchGet()``` que retornará somente os dados ao invés de atribuí-lo os objetos em questão. Útil para consultas únicas na captura de dados secundários. Ambos os métodos de **fetch** recebem um valor ```booleano```  indicando o uso do ```PDOStatement::fetchAll```(true) ou ```PDOStatement::fetch```(false). O padrão é ```true```, ou seja, ele usará ```PDOStatement::fetchAll```.
 
 ---
 
@@ -179,8 +207,7 @@ A classe __Entity__ tambèm possuí outros métodos úteis como:
 - [PDO Drivers](https://www.php.net/manual/pt_BR/pdo.drivers.php)
 
 
-## Feedback
-
+## Feedback, sugestões:
  - Entre em contato comigo pelo email dev.geovanirangel@gmail.com
 
 

@@ -9,11 +9,11 @@ class Adress extends Entity
     public function __construct()
     {
         parent::__construct(
-            "adress",
+            "adresses",
             "id",
             array(
                 "adress" => ["null" => false],
-                "user_id" => ["null" => false]
+                "user_id" => ["null" => false, "foreignEntity" => "Models\User"]
             )
         );
     }

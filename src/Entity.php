@@ -2,7 +2,6 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use Exception;
 use PDOStatement;
 use PDOException;
 use stdClass;
@@ -15,7 +14,7 @@ use Throwable;
  * @author Geovani Rangel <dev.geovanirangel@gmail.com>
  * @license MIT
  * 
- * @version 1.0
+ * @version 2.1.0
  */
 abstract class Entity
 {
@@ -23,61 +22,115 @@ abstract class Entity
     use QueryBuilder;
     use ModelWrapper;
 
-    /** @var array $cols */
+    /** @var array $cols Estrutura da entidade */
     private $cols;
 
-    /** @var string $primary_key */
-    private $primary_key;
+    /** @var string $primaryKey Nome da chave primária */
+    private $primaryKey;
 
-    /** @var string $entity_name */
-    private $entity_name;
+    /** @var string $entityName Nome da entidade */
+    private $entityName;
 
-    /** @var array|stdClass $data*/
+    /** @var array|stdClass $data Dados obtidos em consultas */
     private $data;
 
-    /** @var string $query */
+    /** @var string $query*/
     private $query;
 
     /** @var array $parameters */
     private $parameters;
 
-    /** @var Entity $foreign_entity */
-    private $foreign_entity;
+    /** @var Entity $foreignEntity */
+    private $foreignEntity;
 
     /** @var PDOStatement $statement */
     private $statement;
 
-    /** @var PDOException|Exception $error */
+    /** @var Throwable $error Última exceção/erro ocorrida(o) */
     private $error;
 
-    public function __construct(string $name, string $primary_key, array $cols)
+    private function getForeignEntitys(): void
+    {
+        if ($this->data() !== null) {
+            foreach ($this->cols as $col => $e) {
+                if ($e["foreignEntity"] !== null){
+                    $p = $e["propertyName"];
+                    $this->$p = (new $e["foreignEntity"])->find()->where($e["fkRefer"]." = :fkr", ":fkr={$this->data->$col}")->fetch($e["hasMany"]);
+                    if ($e["hasMany"]){
+                        $this->$p = $this->$p->data();
+                    }
+                    unset($p);
+                }
+            }
+        }
+
+        return;
+    }
+
+    public function __construct(string $name, string $primaryKey, array $cols)
     {
         if (!(count($cols) > 0)) {
             throw new MLException("Provide at least one column.");
         }
 
-        $this->entity_name = $name;
-        $this->primary_key = $primary_key;
+        $this->entityName = $name;
+        $this->primaryKey = $primaryKey;
 
-        foreach ($cols as $col_name => $e) {
-            if (is_numeric($col_name)) {
+        foreach ($cols as $colName => $e) {
+            if (is_numeric($colName)) {
                 throw new MLException("Enter an associative array with names, not numbers.");
             }
 
-            $this->cols[$col_name]["created"] = filter_var($cols[$col_name]["created"] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $this->cols[$colName]["null"] = filter_var($cols[$colName]["null"] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-            $this->cols[$col_name]["updated"] = filter_var($cols[$col_name]["updated"] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $this->cols[$colName]["created"] = filter_var($cols[$colName]["created"] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-            $this->cols[$col_name]["null"] = filter_var($cols[$col_name]["null"] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $this->cols[$colName]["updated"] = filter_var($cols[$colName]["updated"] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            $this->cols[$colName]["foreignEntity"] = $cols[$colName]["foreignEntity"] ?? null;
+
+            if ($this->cols[$colName]["foreignEntity"] !== null AND class_exists($this->cols[$colName]["foreignEntity"])){
+                $this->cols[$colName]["hasMany"] = filter_var($cols[$colName]["hasMany"] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $this->cols[$colName]["fkRefer"] = $cols[$colName]["fkRefer"] ?? null;
+
+                if (!isset($cols[$colName]["propertyName"])){
+                    $this->cols[$colName]["propertyName"] = explode("\\", $this->cols[$colName]["foreignEntity"]);
+                    $this->cols[$colName]["propertyName"] = filter_var(strtolower(array_pop($this->cols[$colName]["propertyName"])),FILTER_SANITIZE_STRING);
+                }
+                else {
+                    $this->cols[$colName]["propertyName"] = filter_var($cols[$colName]["propertyName"],FILTER_SANITIZE_STRING);
+                }
+
+                if (!isset($cols[$colName]["fkRefer"])){
+                    $this->cols[$colName]["fkRefer"] = (new $this->cols[$colName]["foreignEntity"]())->getPKName();
+                }
+                else {
+                    $this->cols[$colName]["fkRefer"] = $cols[$colName]["fkRefer"];
+                }
+            }
+            else {
+                $this->cols[$colName]["hasMany"] = false;
+                $this->cols[$colName]["fkRefer"] = null;
+                $this->cols[$colName]["propertyName"] = null;
+            }
+            
         }
 
-        $this->cols[$primary_key] = ["null" => false, "updated" => false, "created" => false];
+        $this->cols[$primaryKey] = [
+            "null" => false,
+            "updated" => false,
+            "created" => false,
+            "foreignEntity" => null,
+            "hasMany" => false,
+            "fkRefer" => null,
+            "propertyName" => null
+        ];
     }
 
     public function __set($name, $value)
     {
         if (in_array($name, array_keys($this->cols))) {
-            if ($this->data === false or $this->data === null and !is_array($this->data) and !($this->data instanceof stdClass)) {
+            if ($this->data === false OR $this->data === null AND !is_array($this->data) AND !($this->data instanceof stdClass)) {
                 $this->data = new stdClass();
             }
 
@@ -116,12 +169,12 @@ abstract class Entity
 
     public function error(): ?Throwable
     {
-        return ($this->error !== null and $this->error instanceof Throwable) ? $this->error : null;
+        return ($this->error !== null AND $this->error instanceof Throwable) ? $this->error : null;
     }
 
     public function sqlState(): ?int
     {
-        if ($this->error !== null and $this->error instanceof PDOException) {
+        if ($this->error !== null AND $this->error instanceof PDOException) {
             return $this->error->errorInfo[0] ?? null;
         } else {
             return null;
@@ -130,7 +183,7 @@ abstract class Entity
 
     public function data()
     {
-        if ($this->data instanceof stdClass or is_array($this->data)) {
+        if (($this->data instanceof stdClass OR is_array($this->data)) AND count((array)$this->data) > 0) {
             return $this->data;
         } else {
             return null;
@@ -139,10 +192,10 @@ abstract class Entity
 
     public function exist(): bool
     {
-        if (!self::isEmpty($this->data) and $this->data instanceof stdClass) {
+        if (!self::isEmpty($this->data) AND $this->data instanceof stdClass) {
             return true;
         } elseif (is_array($this->data)) {
-            throw new MLException("You cannot use the exist() or found() method with arrays.");
+            throw new MLException("You cannot use the exist() OR found() method with arrays.");
         } else {
             return false;
         }
@@ -157,38 +210,9 @@ abstract class Entity
         }
     }
 
-    public function count(): int
+    public function count()
     {
-        return $this->affectedRows();
-    }
-
-    public function getName(): string
-    {
-        return $this->entity_name;
-    }
-
-    public function getPKName(): string
-    {
-        return $this->primary_key;
-    }
-
-    public function getCols(): array
-    {
-        return $this->cols;
-    }
-
-    private function isEmpty($input): bool
-    {
-        if ($input === null or $input === "") {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function affectedRows()
-    {
-        if ($this->statement !== null and $this->statement instanceof PDOStatement) {
+        if ($this->statement !== null AND $this->statement instanceof PDOStatement) {
             try {
                 return $this->statement->rowCount();
             } catch (PDOException $e) {
@@ -198,5 +222,41 @@ abstract class Entity
         } else {
             throw new MLException("PDOStatement not found.");
         }
+    }
+
+    public function getName(): string
+    {
+        return $this->entityName;
+    }
+
+    public function getPKName(): string
+    {
+        return $this->primaryKey;
+    }
+
+    public function getCols(): array
+    {
+        return $this->cols;
+    }
+
+    public function isEmpty($input): bool
+    {
+        if ($input === null OR $input === "") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function getedNewData(): void
+    {
+        $this->getForeignEntitys();
+        return;
+    }
+
+    public function addData(string $name, $data): void
+    {
+        $this->data->$name = $data;
+        return;
     }
 }

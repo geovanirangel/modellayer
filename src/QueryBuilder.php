@@ -2,6 +2,7 @@
 
 namespace GeovaniRangel\ModelLayer;
 
+use PDO;
 use PDOException;
 
 trait QueryBuilder
@@ -13,11 +14,11 @@ trait QueryBuilder
 
     public function find(string $cols = "*"): self
     {
-        if ($cols != "*" and strpos($cols, $this->primary_key) === false) {
-            $cols = "{$this->entity_name}.{$this->primary_key}, " . trim($cols);
+        if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
+            $cols = "{$this->entityName}.{$this->primaryKey}, " . trim($cols);
         }
 
-        $this->query = " SELECT {$cols} FROM {$this->entity_name}";
+        $this->query = " SELECT {$cols} FROM {$this->entityName}";
 
         return $this;
     }
@@ -25,7 +26,7 @@ trait QueryBuilder
     public function innerJoin(Entity $entity): self
     {
         $this->query .= " INNER JOIN {$entity->getName()}";
-        $this->foreign_entity = $entity;
+        $this->foreignEntity = $entity;
 
         return $this;
     }
@@ -33,7 +34,7 @@ trait QueryBuilder
     public function leftJoin(Entity $entity): self
     {
         $this->query .= " LEFT JOIN {$entity->getName()}";
-        $this->foreign_entity = $entity;
+        $this->foreignEntity = $entity;
 
         return $this;
     }
@@ -41,16 +42,21 @@ trait QueryBuilder
     public function rightJoin(Entity $entity): self
     {
         $this->query .= " RIGHT JOIN {$entity->getName()}";
-        $this->foreign_entity = $entity;
+        $this->foreignEntity = $entity;
 
         return $this;
     }
 
-    public function on(string $fk_refer): self
+    public function on(string $fkRefer): self
     {
-        if ($this->foreign_entity !== null) {
-            $this->query .= " ON {$this->entity_name}.{$this->primary_key} = {$this->foreign_entity->getName()}.{$fk_refer}";
-            return $this;
+        if ($this->foreignEntity !== null) {
+            if (in_array($fkRefer, $this->foreignEntity->getCols())){
+                $this->query .= " ON {$this->entityName}.{$this->primaryKey} = {$this->foreignEntity->getName()}.{$fkRefer}";
+                return $this;
+            }
+            else {
+                throw new MLException("Foreign key({$fkRefer}) does not belong to entity({$this->foreignEntity->getName()}).");
+            }
         } else {
             throw new MLException("You can only use the ON clause when it is followed by a JOIN.");
         }
@@ -105,14 +111,40 @@ trait QueryBuilder
 
             if ($all) {
                 $this->data = $this->statement->fetchAll();
+
+                $this->getedNewData();
+
                 return $this;
             } else {
                 $this->data = $this->statement->fetchObject();
+
+                $this->getedNewData();
+
                 return $this;
             }
         } catch (PDOException $e) {
             $this->error = $e;
             return $this;
+        }
+    }
+
+    public function fetchGet(bool $all = true)
+    {
+        try {
+            $handler = Connection::open("select");
+
+            $this->statement = $handler->prepare(trim($this->query));
+            $this->statement->execute($this->parameters);
+
+            if ($all) {
+                return $this->statement->fetchAll();
+
+            } else {
+                return $this->statement->fetchObject();
+            }
+        } catch (PDOException $e) {
+            $this->error = $e;
+            return null;
         }
     }
 

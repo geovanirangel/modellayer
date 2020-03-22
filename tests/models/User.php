@@ -9,10 +9,10 @@ class User extends Entity
     public function __construct()
     {
         parent::__construct(
-            "user",
+            "users",
             "id",
             [
-                "name" => ["null" => false],
+                "name" => [],
                 "email" => ["null" => false],
                 "created" => ["created" => true],
                 "updated" => ["updated" => true]

@@ -5,12 +5,12 @@ define("DBCONFIG", [
     "driver" => "mysql",
     "host" => "localhost",
     "port" => "3306",
-    "charset" => "utf8",
-    "dbname" => "dbname",
+    "charset" => "utf8mb4",
+    "dbname" => "database_name",
     "users" => [
         "default" => [
-            "name" => "root",
-            "password" => ""
+            "name" => "username",
+            "password" => "password"
         ]
     ],
     "options" => [
