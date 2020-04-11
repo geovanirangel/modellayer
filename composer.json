@@ -3,12 +3,10 @@
     "description": "O ModelLayer é um componente baseado em PDO que abstraí operações de CRUD(Select, Insert, Update e Delete) no seu banco de dados.",
     "keywords": [
         "Database",
-        "CRUD",
         "PDO",
         "Model",
-        "MVC",
-        "Layer Supertype",
-        "Active Record"
+        "Active Record",
+        "CRUD"
     ],
     "license": "MIT",
     "minimum-stability": "stable",

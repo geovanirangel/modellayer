@@ -12,7 +12,7 @@ class Adress extends Entity
             "adresses",
             "id",
             array(
-                "adress" => ["null" => false],
+                "content" => ["null" => false],
                 "user_id" => ["null" => false, "foreignEntity" => "Models\User"]
             )
         );

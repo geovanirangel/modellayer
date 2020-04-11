@@ -2,11 +2,6 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use DateTime;
-use PDO;
-use PDOException;
-use stdClass;
-
 /**
  * Abstração de um CRUD
  * 
@@ -14,7 +9,7 @@ use stdClass;
  * @author Geovani Rangel <dev.geovanirangel@gmail.com>
  * @license MIT
  * 
- * @version 2.1.0
+ * @version 2.2.0
  */
 trait CrudTrait
 {
@@ -33,7 +28,7 @@ trait CrudTrait
      * @param null|string $offset valor usado na cláusula OFFSET.
      * @param null|string $parameters String de paramêtros/valores usados na execução do Statement como valores das cláusulas WHERE por exemplo. Formato "index=value".
      * @param bool $close Se true a conexão aberta será fechada, caso contrátio permanece aberta (recomenda-se usar true).
-     * @return bool|array|stdClass
+     * @return bool|array|\stdClass
      **/
     protected function select(bool $all = true, string $cols = "*", string $entityName, ?string $conditions = null, ?string $group = null, ?string $order = null, ?string $limit = null, ?string $offset = null, ?string $parameters = null, bool $close = true)
     {
@@ -65,16 +60,15 @@ trait CrudTrait
 
             if ($close) {
                 $handler = null;
-                unset($handler);
             }
 
             if ($all) {
-                return $this->statement->fetchAll(PDO::FETCH_CLASS);
+                return $this->statement->fetchAll(\PDO::FETCH_CLASS);
             } else {
                 return $this->statement->fetchObject();
             }
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return false;
         }
     }
@@ -99,12 +93,11 @@ trait CrudTrait
 
             if ($close) {
                 $handler = null;
-                unset($handler);
             }
 
             return $this->statement->execute($this->parameters);
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return false;
         }
     }
@@ -132,7 +125,7 @@ trait CrudTrait
                 $updated = $entityData[$col]["updated"] ?? false;
 
                 if ($updated) {
-                    $value = (new DateTime("now"))->format($dateFormat);
+                    $value = (new \DateTime("now"))->format($dateFormat);
                 }
 
                 if (($value == null or $value == "") and $null === false) {
@@ -144,7 +137,6 @@ trait CrudTrait
             }
         }
         $fields = implode(", ", $temp);
-        unset($temp);
 
         $sql = "UPDATE {$entityName} SET {$fields}";
         if ($conditions !== null) {
@@ -160,12 +152,11 @@ trait CrudTrait
 
             if ($close) {
                 $handler = null;
-                unset($handler);
             }
 
             return $this->statement->execute($this->parameters);
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return false;
         }
     }
@@ -192,7 +183,7 @@ trait CrudTrait
                 $updated = $entityData[$col]["updated"] ?? false;
 
                 if ($created or $updated) {
-                    $value = (new DateTime("now"))->format($dateFormat);
+                    $value = (new \DateTime("now"))->format($dateFormat);
                 }
 
                 if (($value == null or $value == "") and $null === false) {
@@ -201,12 +192,11 @@ trait CrudTrait
 
                 $temp["fields"][$col] = $col;
                 $temp["fields_paramenters"][$col] = ":col_{$col}";
-                $values .= "&col_{$col}={$value}";
+                $values .= "&:col_{$col}={$value}";
             }
         }
         $fields = implode(", ", $temp["fields"]);
         $fieldsParamenters = implode(", ", $temp["fields_paramenters"]);
-        unset($temp);
 
         parse_str($values, $this->parameters);
 
@@ -219,12 +209,11 @@ trait CrudTrait
 
             if ($close) {
                 $handler = null;
-                unset($handler);
             }
 
             return $this->statement->execute($this->parameters);
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return false;
         }
     }

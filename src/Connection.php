@@ -2,9 +2,6 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use PDO;
-use PDOException;
-
 abstract class Connection
 {
     /**
@@ -15,7 +12,7 @@ abstract class Connection
      * @param array $config
      * @return string
      **/
-    private static function dsn($config = DBCONFIG): string
+    private static function dsn($config = DB_CONFIG): string
     {
         $driver = $config["driver"];
         $host = $config["host"];
@@ -33,17 +30,17 @@ abstract class Connection
      *
      * @param string $user
      * @param array $config
-     * @return null|PDO
-     * @throws PDOException caso a conexão falhe
+     * @return null|\PDO
+     * @throws \PDOException caso a conexão falhe
      **/
-    public static function open($user = "default", $config = DBCONFIG): ?PDO
+    public static function open($user = "default", $config = DB_CONFIG): ?\PDO
     {
         $username = $config["users"][$user]["name"] ?? $config["users"]["default"]["name"] ?? null;
         $password = $config["users"][$user]["password"] ?? $config["users"]["default"]["password"] ?? null;
 
         $options = $config["options"];
 
-        return new PDO(self::dsn(), $username, $password, $options);
+        return new \PDO(self::dsn(), $username, $password, $options);
     }
 
     public function __construct()

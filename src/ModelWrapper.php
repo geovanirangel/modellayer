@@ -18,6 +18,15 @@ trait ModelWrapper
         return $this;
     }
 
+    public function findAll(string $cols = "*", ?string $limit = null, ?string $offset = null)
+    {
+        if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
+            $cols = "{$this->primaryKey}, " . $cols;
+        }
+
+        return $this->select(true, $cols, $this->entityName, null, null, null, $limit, $offset);
+    }
+
     public function getByPK(string $val, string $cols = "*"): self
     {
         if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
@@ -30,6 +39,15 @@ trait ModelWrapper
         return $this;
     }
 
+    public function findByPK(string $val, string $cols = "*")
+    {
+        if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
+            $cols = "{$this->primaryKey}, " . $cols;
+        }
+
+        return $this->select(false, $cols, $this->entityName, "{$this->primaryKey} = :{$this->primaryKey}", null, null, null, null, ":{$this->primaryKey}={$val}");
+    }
+
     public function getBy(string $col, string $val, string $cols = "*"): self
     {
         if (!in_array($col, array_keys($this->cols))) {
@@ -39,11 +57,25 @@ trait ModelWrapper
         if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
             $cols = "{$this->primaryKey}, " . $cols;
         }
+
         $this->data = $this->select(false, $cols, $this->entityName, "{$col} = :{$col}", null, null, null, null, ":{$col}={$val}");
 
         $this->getedNewData();
 
         return $this;
+    }
+
+    public function findBy(string $col, string $val, string $cols = "*")
+    {
+        if (!in_array($col, array_keys($this->cols))) {
+            throw new MLException("{$col} column was not mapped in the constructor method.");
+        }
+
+        if ($cols != "*" and strpos($cols, $this->primaryKey) === false) {
+            $cols = "{$this->primaryKey}, " . $cols;
+        }
+
+        return $this->select(false, $cols, $this->entityName, "{$col} = :{$col}", null, null, null, null, ":{$col}={$val}");
     }
 
     public function delByPK(?string $value = null): bool
@@ -89,7 +121,9 @@ trait ModelWrapper
             $data = (array) $this->data;
             $pk = $this->primaryKey;
 
-            if ($this->data instanceof stdCLass and isset($this->data->$pk)) {
+            if ($this->data == null or $this->data == false) {
+                throw new MLException("No data found. Unable to save.");
+            } elseif ($this->data instanceof stdCLass and isset($this->data->$pk)) {
                 foreach ($this->cols as $col => $opt) {
                     if ($col != $this->primaryKey) {
                         $entityData[$col] = $opt;
@@ -105,12 +139,10 @@ trait ModelWrapper
                     }
                 }
                 return $this->insert($this->entityName, $entityData);
+            } elseif (is_array($this->data)) {
+                throw new MLException("Multiple results found. Get just one to save.");
             } else {
-                if (is_array($this->data)) {
-                    throw new MLException("Multiple results found. Get just one to save.");
-                } else {
-                    throw new MLException("Couldn't save. No data was found.");
-                }
+                throw new MLException("Unable to save.");
             }
         } else {
             throw new MLException("Unable to save because an error was encountered.");

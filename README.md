@@ -2,11 +2,6 @@
 
 O ModelLayer é um componente que abstrai operações de CRUD (Select, Insert, Update e Delete) no seu banco de dados. Baseado em PDO, projetado para um estruturas MVC (Model-View-Controller) com o padrão Active Record, testado com MySQL.
 
-## Novidades da versão 2.1.0!
-
-  - Adicionado suporte a relacionamentos de entidades. Agora entidades estrangeiras poderão ser instanciadas automaticamente após consultas.
-  - Um novo método vai te ajudar na construção de consultas. O ```fetchGet()``` permite obter os dados de suas consultas sem sobreescrever os dados já obtidos em consultas anteriores.
-
 ---
 
 ## Instalação

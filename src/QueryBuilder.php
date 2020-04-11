@@ -2,9 +2,6 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use PDO;
-use PDOException;
-
 trait QueryBuilder
 {
     public function getString(): string
@@ -55,7 +52,7 @@ trait QueryBuilder
                 return $this;
             }
             else {
-                throw new MLException("Foreign key({$fkRefer}) does not belong to entity({$this->foreignEntity->getName()}).");
+                throw new MLException("Foreign key {$fkRefer} was not found in the entity {$this->foreignEntity->getName()}.");
             }
         } else {
             throw new MLException("You can only use the ON clause when it is followed by a JOIN.");
@@ -122,13 +119,13 @@ trait QueryBuilder
 
                 return $this;
             }
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return $this;
         }
     }
 
-    public function fetchGet(bool $all = true)
+    public function get(bool $all = true)
     {
         try {
             $handler = Connection::open("select");
@@ -142,8 +139,8 @@ trait QueryBuilder
             } else {
                 return $this->statement->fetchObject();
             }
-        } catch (PDOException $e) {
-            $this->error = $e;
+        } catch (\Throwable $th) {
+            $this->error = $th;
             return null;
         }
     }

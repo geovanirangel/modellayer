@@ -2,19 +2,14 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use PDOStatement;
-use PDOException;
-use stdClass;
-use Throwable;
-
 /**
- * Abstração entidades de bancos de dados SQL com PDO
+ * Extensão para modelos
  * 
  * @link Documentação https://github.com/geovanirangel/modellayer/blob/master/README.md
  * @author Geovani Rangel <dev.geovanirangel@gmail.com>
  * @license MIT
  * 
- * @version 2.1.0
+ * @version 2.2.0
  */
 abstract class Entity
 {
@@ -22,16 +17,16 @@ abstract class Entity
     use QueryBuilder;
     use ModelWrapper;
 
-    /** @var array $cols Estrutura da entidade */
+    /** @var array $cols */
     private $cols;
-
-    /** @var string $primaryKey Nome da chave primária */
-    private $primaryKey;
 
     /** @var string $entityName Nome da entidade */
     private $entityName;
 
-    /** @var array|stdClass $data Dados obtidos em consultas */
+    /** @var string $primaryKey Chave primária */
+    private $primaryKey;
+
+    /** @var array|\stdClass $data Dados obtidos em consultas */
     private $data;
 
     /** @var string $query*/
@@ -43,10 +38,10 @@ abstract class Entity
     /** @var Entity $foreignEntity */
     private $foreignEntity;
 
-    /** @var PDOStatement $statement */
+    /** @var \PDOStatement $statement */
     private $statement;
 
-    /** @var Throwable $error Última exceção/erro ocorrida(o) */
+    /** @var \Throwable $error */
     private $error;
 
     private function getForeignEntitys(): void
@@ -55,11 +50,7 @@ abstract class Entity
             foreach ($this->cols as $col => $e) {
                 if ($e["foreignEntity"] !== null){
                     $p = $e["propertyName"];
-                    $this->$p = (new $e["foreignEntity"])->find()->where($e["fkRefer"]." = :fkr", ":fkr={$this->data->$col}")->fetch($e["hasMany"]);
-                    if ($e["hasMany"]){
-                        $this->$p = $this->$p->data();
-                    }
-                    unset($p);
+                    $this->$p = (new $e["foreignEntity"])->find()->where($e["fkRefer"]." = :fkr", ":fkr={$this->data->$col}")->get($e["hasMany"]);
                 }
             }
         }
@@ -67,7 +58,7 @@ abstract class Entity
         return;
     }
 
-    public function __construct(string $name, string $primaryKey, array $cols)
+    public function __construct(string $name, string $primaryKey, array $cols, ?string $namespace = null)
     {
         if (!(count($cols) > 0)) {
             throw new MLException("Provide at least one column.");
@@ -89,9 +80,9 @@ abstract class Entity
 
             $this->cols[$colName]["foreignEntity"] = $cols[$colName]["foreignEntity"] ?? null;
 
-            if ($this->cols[$colName]["foreignEntity"] !== null AND class_exists($this->cols[$colName]["foreignEntity"])){
+            if ($this->cols[$colName]["foreignEntity"] !== null){
                 $this->cols[$colName]["hasMany"] = filter_var($cols[$colName]["hasMany"] ?? false, FILTER_VALIDATE_BOOLEAN);
-                $this->cols[$colName]["fkRefer"] = $cols[$colName]["fkRefer"] ?? null;
+                $this->cols[$colName]["fkRefer"] = $cols[$colName]["fkRefer"] ?? (new $this->cols[$colName]["foreignEntity"]())->getPKName();
 
                 if (!isset($cols[$colName]["propertyName"])){
                     $this->cols[$colName]["propertyName"] = explode("\\", $this->cols[$colName]["foreignEntity"]);
@@ -99,13 +90,6 @@ abstract class Entity
                 }
                 else {
                     $this->cols[$colName]["propertyName"] = filter_var($cols[$colName]["propertyName"],FILTER_SANITIZE_STRING);
-                }
-
-                if (!isset($cols[$colName]["fkRefer"])){
-                    $this->cols[$colName]["fkRefer"] = (new $this->cols[$colName]["foreignEntity"]())->getPKName();
-                }
-                else {
-                    $this->cols[$colName]["fkRefer"] = $cols[$colName]["fkRefer"];
                 }
             }
             else {
@@ -125,13 +109,50 @@ abstract class Entity
             "fkRefer" => null,
             "propertyName" => null
         ];
+
+        // $this->namespace = $namespace ?? (new \ReflectionClass(get_class($this)))->getNamespaceName();
     }
+
+    public function __serialize(): array
+    {
+        return (array)$this->data;
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->setData((object)$data);
+        return;
+    }
+
+    // public function __call($name, $arguments)
+    // {
+    //     $propertys = array_keys(get_object_vars($this));
+
+    //     foreach ($propertys as $property){
+    //         if (strpos($name, $property) !== false){
+    //             break;
+    //         }
+    //     }
+
+    //     $method = array_filter(explode($property, $name));
+    //     $method = lcfirst(array_pop($method));
+    //     $arguments = implode(", ", $arguments);
+
+    //     $model = $this->namespace.ucfirst($property);
+    //     $pk = (new $model())->getPKName();
+
+    //     $return = (new $model())->getByPK($this->$property->$pk)->$method($arguments);
+
+    //     unset($model, $property, $pk, $method, $arguments, $propertys, $name);
+
+    //     return $return;
+    // }
 
     public function __set($name, $value)
     {
         if (in_array($name, array_keys($this->cols))) {
-            if ($this->data === false OR $this->data === null AND !is_array($this->data) AND !($this->data instanceof stdClass)) {
-                $this->data = new stdClass();
+            if ($this->data === false OR $this->data === null AND !is_array($this->data) AND !($this->data instanceof \stdClass)) {
+                $this->data = new \stdClass();
             }
 
             $this->data->$name = (string) $value;
@@ -167,14 +188,19 @@ abstract class Entity
         }
     }
 
-    public function error(): ?Throwable
+    public function getStatement(): \PDOStatement
     {
-        return ($this->error !== null AND $this->error instanceof Throwable) ? $this->error : null;
+        return $this->statement;
+    }
+
+    public function error(): ?\Throwable
+    {
+        return ($this->error !== null AND $this->error instanceof \Throwable) ? $this->error : null;
     }
 
     public function sqlState(): ?int
     {
-        if ($this->error !== null AND $this->error instanceof PDOException) {
+        if ($this->error !== null AND $this->error instanceof \PDOException) {
             return $this->error->errorInfo[0] ?? null;
         } else {
             return null;
@@ -183,7 +209,7 @@ abstract class Entity
 
     public function data()
     {
-        if (($this->data instanceof stdClass OR is_array($this->data)) AND count((array)$this->data) > 0) {
+        if (($this->data instanceof \stdClass OR is_array($this->data)) AND count((array)$this->data) > 0) {
             return $this->data;
         } else {
             return null;
@@ -192,7 +218,7 @@ abstract class Entity
 
     public function exist(): bool
     {
-        if (!self::isEmpty($this->data) AND $this->data instanceof stdClass) {
+        if (!self::isEmpty($this->data) AND $this->data instanceof \stdClass) {
             return true;
         } elseif (is_array($this->data)) {
             throw new MLException("You cannot use the exist() OR found() method with arrays.");
@@ -212,11 +238,11 @@ abstract class Entity
 
     public function count()
     {
-        if ($this->statement !== null AND $this->statement instanceof PDOStatement) {
+        if ($this->statement !== null AND $this->statement instanceof \PDOStatement) {
             try {
                 return $this->statement->rowCount();
-            } catch (PDOException $e) {
-                $this->error = $e;
+            } catch (\Throwable $th) {
+                $this->error = $th;
                 return false;
             }
         } else {
@@ -258,5 +284,16 @@ abstract class Entity
     {
         $this->data->$name = $data;
         return;
+    }
+
+    public function setData(\stdClass $data): self
+    {
+        $this->data = $data;
+        return $this;
+    }
+
+    public function forJson($options = 0): string
+    {
+        return json_encode((array)$this->data, $options);
     }
 }

@@ -1,16 +1,16 @@
 <?php
 
 // Exemplo de conexão
-define("DBCONFIG", [
+define("DB_CONFIG", [
     "driver" => "mysql",
     "host" => "localhost",
     "port" => "3306",
     "charset" => "utf8mb4",
-    "dbname" => "database_name",
+    "dbname" => "modellayer",
     "users" => [
         "default" => [
-            "name" => "username",
-            "password" => "password"
+            "name" => "root",
+            "password" => ""
         ]
     ],
     "options" => [
