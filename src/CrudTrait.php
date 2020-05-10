@@ -9,7 +9,7 @@ namespace GeovaniRangel\ModelLayer;
  * @author Geovani Rangel <dev.geovanirangel@gmail.com>
  * @license MIT
  * 
- * @version 2.2.0
+ * @version 2.2.1
  */
 trait CrudTrait
 {
@@ -145,6 +145,10 @@ trait CrudTrait
 
         parse_str($values, $this->parameters);
 
+        $this->parameters = array_map(function($value){
+            return $value = (strlen($value) == 0) ? null : $value;;
+        }, $this->parameters);
+
         $handler = Connection::open("update");
 
         try {
@@ -201,6 +205,10 @@ trait CrudTrait
         parse_str($values, $this->parameters);
 
         $sql = "INSERT INTO {$entityName} ({$fields}) VALUES ({$fieldsParamenters})";
+        
+        $this->parameters = array_map(function($value){
+            return $value = (strlen($value) == 0) ? null : $value;;
+        }, $this->parameters);
 
         $handler = Connection::open("insert");
 

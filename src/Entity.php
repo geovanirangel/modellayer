@@ -9,7 +9,7 @@ namespace GeovaniRangel\ModelLayer;
  * @author Geovani Rangel <dev.geovanirangel@gmail.com>
  * @license MIT
  * 
- * @version 2.2.0
+ * @version 2.2.1
  */
 abstract class Entity
 {
@@ -188,7 +188,7 @@ abstract class Entity
         }
     }
 
-    public function getStatement(): \PDOStatement
+    public function getStatement(): ?\PDOStatement
     {
         return $this->statement;
     }
@@ -263,6 +263,11 @@ abstract class Entity
     public function getCols(): array
     {
         return $this->cols;
+    }
+
+    public function getColNames(): array
+    {
+        return array_keys($this->cols);
     }
 
     public function isEmpty($input): bool
