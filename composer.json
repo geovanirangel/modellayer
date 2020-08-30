@@ -9,7 +9,6 @@
         "CRUD"
     ],
     "license": "MIT",
-    "minimum-stability": "stable",
     "type": "library",
     "support": {
         "email": "dev.geovanirangel@gmail.com"
@@ -27,7 +26,7 @@
         }
     },
     "require": {
-        "php": "^7.0",
+        "php": "^7.3",
         "ext-pdo": "*"
     }
 }

@@ -2,9 +2,10 @@
 
 namespace Models;
 
-use GeovaniRangel\ModelLayer\Entity;
+use GeovaniRangel\ModelLayer\Model;
+use GeovaniRangel\ModelLayer\ModelLayer;
 
-class User extends Entity
+class User extends Model
 {
     public function __construct()
     {
@@ -13,9 +14,10 @@ class User extends Entity
             "id",
             [
                 "name" => [],
-                "email" => ["null" => false],
-                "created" => ["created" => true],
-                "updated" => ["updated" => true]
+                "email" => ["empty" => true],
+                "code" => ["type" => ModelLayer::INTEGER],
+                "created_at" => ["created" => true],
+                "updated_at" => ["updated" => true]
             ]
         );
     }

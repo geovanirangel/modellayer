@@ -1,14 +1,14 @@
 <?php
 
-// Exemplo de conexão
-define("DB_CONFIG", [
+// Configuração de conexão
+define("MODEL_LAYER_CONFIG", [
     "driver" => "mysql",
     "host" => "localhost",
     "port" => "3306",
     "charset" => "utf8mb4",
-    "dbname" => "modellayer",
+    "dbname" => "dbname",
     "users" => [
-        "default" => [
+        "root" => [
             "name" => "root",
             "password" => ""
         ]
