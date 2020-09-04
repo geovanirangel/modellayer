@@ -63,6 +63,17 @@ abstract class Model extends ModelLayer
         return;
     }
 
+    public function __serialize(): array
+    {
+        return $this->data;
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->data = $data;
+        return;
+    }
+
     public function find(string $cols = "*"): self
     {
         return $this->find($cols)->from($this->entityName);

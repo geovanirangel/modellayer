@@ -12,11 +12,11 @@ final class Connection
     /** @var string $lastOperationType */
     private static $lastOperationType = null;
 
-    public static function get($operation = Operation::ROOT, $config = MODEL_LAYER_CONFIG): \PDO
+    public static function get($operation = Operation::ROOT, $config = DB_CONFIG): \PDO
     {
         if (empty(self::$connection) OR $operation != self::$lastOperationType){
             $username = $config["users"][$operation]["name"] ?? $config["users"][Operation::ROOT]["name"] ?? "";
-            $password = $config["users"][$operation]["password"] ?? $config["users"][Operation::ROOT]["password"] ?? "";
+            $password = $config["users"][$operation]["password"] ?? $config["users"]["default"]["password"] ?? "";
 
             $driver = $config["driver"];
             $host = $config["host"];
@@ -24,7 +24,7 @@ final class Connection
             $dbname = $config["dbname"];
             $charset = $config["charset"];
 
-            self::$connection = new \PDO("{$driver}:host={$host}:{$port};dbname={$dbname};charset={$charset}", $username, $password, $config["options"]);
+            self::$connection = new \PDO("{$driver}:host={$host}:{$port};dbname={$dbname};charset={$charset};user={$username};password={$password}", $config["options"]);
         }
 
         self::$lastOperationType = $operation;
