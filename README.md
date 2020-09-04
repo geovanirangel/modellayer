@@ -9,7 +9,7 @@ O ModelLayer é um componente que abstrai operações de CRUD (Select, Insert, U
 via Composer:
 
 ```json
-"geovanirangel/modellayer": "v3"
+"geovanirangel/modellayer": "^3.0"
 ```
 
 ## Referências
