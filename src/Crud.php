@@ -4,5 +4,5 @@ namespace GeovaniRangel\ModelLayer;
 
 class Crud extends ModelLayer
 {
-    use Traits\CrudTrait;
+    use \Traits\CrudTrait;
 }

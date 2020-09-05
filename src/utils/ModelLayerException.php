@@ -1,6 +1,6 @@
 <?php
 
-namespace GeovaniRangel\ModelLayer\Utils;
+namespace Utils;
 
 final class ModelLayerException extends \RuntimeException
 {

@@ -2,7 +2,7 @@
 
 namespace GeovaniRangel\ModelLayer;
 
-use GeovaniRangel\ModelLayer\Utils\Connection;
+use Utils\Connection;
 
 /**
  * @link Documentação https://github.com/geovanirangel/modellayer/blob/master/README.md
@@ -20,17 +20,13 @@ abstract class ModelLayer
 
     const DATETIME_FORMAT = "Y-m-d H:i:s";
 
-    /** @var \Throwable $error last/current error */
-    protected $error = null;
+    protected \Throwable $error;
 
-    /** @var string $query */
-    protected $query = null;
+    protected string $query;
 
-    /** @var array $parameters */
-    protected $parameters = null;
+    protected array $parameters;
 
-    /** @var \PDOStatement $statement */
-    protected $statement = null;
+    protected \PDOStatement $statement;
 
     public function __debugInfo()
     {

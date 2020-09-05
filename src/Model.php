@@ -4,7 +4,7 @@ namespace GeovaniRangel\ModelLayer;
 
 abstract class Model extends ModelLayer
 {
-    use Traits\CrudTrait, Traits\QueryTrait;
+    use \Traits\CrudTrait, \Traits\QueryTrait;
 
     const OPTIONS_DEFAULT = [
         "empty" => false,
@@ -118,7 +118,7 @@ abstract class Model extends ModelLayer
     public function save()
     {
         if (is_array($this->data) OR empty($this->data) OR !is_object($this->data)){
-            $this->error = new Utils\ModelLayerException("Could not be saved. Data must be stdClass object.");
+            $this->error = new \Utils\ModelLayerException("Could not be saved. Data must be stdClass object.");
             return false;
         }
 
@@ -147,7 +147,7 @@ abstract class Model extends ModelLayer
     {
         foreach ($this->data as $columnName => $value){
             if (empty($value) AND !($this->columns[$columnName]["empty"] ?? self::OPTIONS_DEFAULT["empty"])){
-                throw new Utils\ModelLayerException("The \"{$columnName}\" field cannot be empty");
+                throw new \Utils\ModelLayerException("The \"{$columnName}\" field cannot be empty");
             }
         }
         return;

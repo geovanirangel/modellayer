@@ -1,6 +1,6 @@
 <?php
 
-namespace GeovaniRangel\ModelLayer\Traits;
+namespace Traits;
 
 trait CrudTrait
 {

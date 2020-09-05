@@ -1,6 +1,6 @@
 <?php
 
-namespace GeovaniRangel\ModelLayer\Utils;
+namespace Utils;
 
 use GeovaniRangel\ModelLayer\Operation;
 
@@ -12,7 +12,7 @@ final class Connection
     /** @var string $lastOperationType */
     private static $lastOperationType = null;
 
-    public static function get($operation = Operation::ROOT, $config = DB_CONFIG): \PDO
+    public static function get($operation = Operation::ROOT, $config = MODEL_LAYER_CONFIG): \PDO
     {
         if (empty(self::$connection) OR $operation != self::$lastOperationType){
             $username = $config["users"][$operation]["name"] ?? $config["users"][Operation::ROOT]["name"] ?? "";

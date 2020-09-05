@@ -4,7 +4,7 @@ namespace GeovaniRangel\ModelLayer;
 
 class Query extends ModelLayer
 {
-    use Traits\QueryTrait;
+    use \Traits\QueryTrait;
     
     public function __construct(?string $query = null, ?array $parameters = null) {
         if (!empty($query)){
